@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query';
 import { fetchNoteById } from '@/lib/api/serverApi';
 import NoteDetailsClient from './NoteDetails.client';
 
@@ -28,27 +29,28 @@ export async function generateMetadata(props: PageProps): Promise<Metadata> {
   } catch {
     return {
       title: 'Note not found | NoteHub',
-      description: 'The requested note does not exist or was deleted.',
-      metadataBase: new URL(BASE_URL),
-      openGraph: {
-        title: 'Note not found | NoteHub',
-        description: 'The requested note does not exist or was deleted.',
-        url: `${BASE_URL}/notes/${params.id}`,
-        images: ['https://ac.goit.global/fullstack/react/notehub-og-meta.jpg'],
-      },
     };
   }
 }
 
 export default async function NoteDetailPage(props: PageProps) {
   const params = await props.params;
-  
-  let note;
+  const { id } = params;
+
+  const queryClient = new QueryClient();
+
   try {
-    note = await fetchNoteById(params.id);
-  } catch {
+    await queryClient.prefetchQuery({
+      queryKey: ['note', id],
+      queryFn: () => fetchNoteById(id),
+    });
+  } catch (error) {
     notFound();
   }
-  
-  return <NoteDetailsClient note={note} />;
+
+  return (
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <NoteDetailsClient id={id} />
+    </HydrationBoundary>
+  );
 }

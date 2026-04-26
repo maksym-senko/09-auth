@@ -9,16 +9,15 @@ import { useAuthStore } from '@/lib/store/authStore';
 interface FormData {
   email: string;
   password: string;
-  username: string;
 }
 
 export default function SignUp() {
   const router = useRouter();
   const { setUser } = useAuthStore();
+  
   const [formData, setFormData] = useState<FormData>({
     email: '',
     password: '',
-    username: '',
   });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -40,7 +39,6 @@ export default function SignUp() {
       const user = await register({
         email: formData.email,
         password: formData.password,
-        username: formData.username,
       });
 
       setUser(user);
@@ -70,18 +68,6 @@ export default function SignUp() {
           />
         </div>
 
-        <div className={css.formGroup}>
-          <label htmlFor="username">Username</label>
-          <input
-            id="username"
-            type="text"
-            name="username"
-            className={css.input}
-            value={formData.username}
-            onChange={handleChange}
-            required
-          />
-        </div>
 
         <div className={css.formGroup}>
           <label htmlFor="password">Password</label>

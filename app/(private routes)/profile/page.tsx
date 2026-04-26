@@ -1,43 +1,28 @@
-'use client';
-
-import { useEffect, useState } from 'react';
+import { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
 import css from './page.module.css';
-import { useAuthStore } from '@/lib/store/authStore';
-import { getMe } from '@/lib/api/clientApi';
+import { getMe } from '@/lib/api/serverApi';
+import { User } from '@/types/user';
 
-export default function ProfilePage() {
-  const { user, setUser } = useAuthStore();
-  const [isLoading, setIsLoading] = useState(true);
+export const metadata: Metadata = {
+  title: 'Profile | NoteHub',
+  description: 'View and manage your profile details',
+};
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const userData = await getMe();
-        setUser(userData);
-      } catch (error) {
-        console.error('Failed to fetch user data:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+export default async function ProfilePage() {
+  let user: User | null = null;
 
-    fetchUserData();
-  }, [setUser]);
-
-  if (isLoading) {
-    return (
-      <main className={css.mainContent}>
-        <p>Loading...</p>
-      </main>
-    );
+  try {
+    user = await getMe();
+  } catch (error) {
+    console.error('Failed to fetch user:', error);
   }
 
   if (!user) {
     return (
       <main className={css.mainContent}>
-        <p>User not found</p>
+        <p>User not found or not authorized</p>
       </main>
     );
   }
@@ -51,6 +36,7 @@ export default function ProfilePage() {
             Edit Profile
           </Link>
         </div>
+        
         <div className={css.avatarWrapper}>
           <Image
             src={user.avatar || 'https://ac.goit.global/fullstack/react/notehub-default-avatar.jpg'}
@@ -58,8 +44,10 @@ export default function ProfilePage() {
             width={120}
             height={120}
             className={css.avatar}
+            priority
           />
         </div>
+
         <div className={css.profileInfo}>
           <p>
             Username: <strong>{user.username || 'Not set'}</strong>

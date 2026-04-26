@@ -2,7 +2,6 @@ import { api } from "./api";
 import { User } from "@/types/user";
 import { Note, NotesResponse, NoteTag } from "@/types/note";
 
-
 interface FetchNotesParams {
   page?: number;
   perPage?: number;
@@ -17,7 +16,7 @@ export const login = async (credentials: Pick<User, 'email'> & { password: strin
   return data;
 };
 
-export const register = async (credentials: Omit<User, 'avatar'> & { password: string }): Promise<User> => {
+export const register = async (credentials: Pick<User, 'email'> & { password: string }): Promise<User> => {
   const { data } = await api.post<User>("/auth/register", credentials);
   return data;
 };
@@ -47,12 +46,9 @@ export const createNote = async (note: Pick<Note, 'title' | 'content' | 'tag'>):
   return data;
 };
 
-export const deleteNote = async (id: string): Promise<void> => {
-  await api.delete(`/notes/${id}`);
-};
 
-export const updateNote = async (id: string, note: Partial<Note>): Promise<Note> => {
-  const { data } = await api.patch<Note>(`/notes/${id}`, note);
+export const deleteNote = async (id: string): Promise<Note> => {
+  const { data } = await api.delete<Note>(`/notes/${id}`);
   return data;
 };
 

@@ -2,17 +2,22 @@
 
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { deleteNote } from '@/lib/api/clientApi';
-import { Note } from '@/types/note';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import { deleteNote, fetchNoteById } from '@/lib/api/clientApi';
 import styles from './page.module.css';
 
-export default function NoteDetailsClient({ note }: { note: Note }) {
+export default function NoteDetailsClient({ id }: { id: string }) {
   const router = useRouter();
   const queryClient = useQueryClient();
 
+  const { data: note, isLoading, isError } = useQuery({
+    queryKey: ['note', id],
+    queryFn: () => fetchNoteById(id),
+    staleTime: 1000 * 60 * 5, 
+  });
+
   const deleteMutation = useMutation({
-    mutationFn: () => deleteNote(note.id),
+    mutationFn: () => deleteNote(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notes'] });
       router.push('/notes');
@@ -39,6 +44,14 @@ export default function NoteDetailsClient({ note }: { note: Note }) {
     }
   };
 
+  if (isLoading) {
+    return <div className={styles.loading}>Loading note details...</div>;
+  }
+
+  if (isError || !note) {
+    return <div className={styles.error}>Error: Could not find the note.</div>;
+  }
+
   return (
     <main className={styles.main}>
       <div className={styles.container}>
@@ -46,8 +59,12 @@ export default function NoteDetailsClient({ note }: { note: Note }) {
           <Link href="/notes" className={styles.backButton}>
             ← Back to notes
           </Link>
-          <button onClick={handleDelete} className={styles.deleteButton}>
-            Delete Note
+          <button 
+            onClick={handleDelete} 
+            className={styles.deleteButton}
+            disabled={deleteMutation.isPending} 
+          >
+            {deleteMutation.isPending ? 'Deleting...' : 'Delete Note'}
           </button>
         </div>
         

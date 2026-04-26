@@ -1,4 +1,6 @@
 import { cookies } from 'next/headers';
+import { AxiosResponse } from 'axios';
+import { api } from './api';
 import { User } from '@/types/user';
 import { Note, NotesResponse, NoteTag } from '@/types/note';
 
@@ -9,44 +11,26 @@ interface FetchNotesParams {
   search?: string;
 }
 
-const BASE_URL = 'https://notehub-api.goit.study';
-
-async function makeRequest<T>(
-  endpoint: string,
-  options?: RequestInit,
-): Promise<T> {
+const getServerHeaders = async () => {
   const cookieStore = await cookies();
-  const headers = new Headers(options?.headers || {});
-  
-  headers.set('Content-Type', 'application/json');
-  
-  const allCookies = cookieStore.getAll();
-  if (allCookies.length > 0) {
-    const cookieString = allCookies.map(c => `${c.name}=${c.value}`).join('; ');
-    headers.set('Cookie', cookieString);
-  }
+  const cookieString = cookieStore
+    .getAll()
+    .map((c) => `${c.name}=${c.value}`)
+    .join('; ');
 
-  const response = await fetch(`${BASE_URL}${endpoint}`, {
-    ...options,
-    headers,
-    credentials: 'include',
-  });
-
-  if (!response.ok) {
-    throw new Error(`API Error: ${response.status}`);
-  }
-
-  const data = await response.json();
-  return data;
-}
+  return {
+    Cookie: cookieString,
+  };
+};
 
 // --- ПЕРЕВІРКА АВТОРИЗАЦІЇ ---
 
-export const checkSession = async (): Promise<User | null> => {
+export const checkSession = async (): Promise<AxiosResponse<User> | null> => {
   try {
-    const user = await makeRequest<User>('/auth/session');
-    return user;
-  } catch {
+    const headers = await getServerHeaders();
+    const response = await api.get<User>('/auth/session', { headers });
+    return response;
+  } catch (error) {
     return null;
   }
 };
@@ -54,24 +38,24 @@ export const checkSession = async (): Promise<User | null> => {
 // --- НОТАТКИ ---
 
 export const fetchNotes = async (params: FetchNotesParams): Promise<NotesResponse> => {
-  const searchParams = new URLSearchParams();
-  if (params.page) searchParams.append('page', String(params.page));
-  if (params.perPage) searchParams.append('perPage', String(params.perPage));
-  if (params.tag) searchParams.append('tag', params.tag);
-  if (params.search) searchParams.append('search', params.search);
-
-  const queryString = searchParams.toString();
-  const endpoint = `/notes${queryString ? `?${queryString}` : ''}`;
-  
-  return makeRequest<NotesResponse>(endpoint);
+  const headers = await getServerHeaders();
+  const { data } = await api.get<NotesResponse>('/notes', { 
+    params, 
+    headers 
+  });
+  return data;
 };
 
 export const fetchNoteById = async (id: string): Promise<Note> => {
-  return makeRequest<Note>(`/notes/${id}`);
+  const headers = await getServerHeaders();
+  const { data } = await api.get<Note>(`/notes/${id}`, { headers });
+  return data;
 };
 
 // --- КОРИСТУВАЧ ---
 
 export const getMe = async (): Promise<User> => {
-  return makeRequest<User>('/users/me');
+  const headers = await getServerHeaders();
+  const { data } = await api.get<User>('/users/me', { headers });
+  return data;
 };

@@ -1,7 +1,41 @@
-export default function ModalLayout({
-  children,
-}: {
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
+import { TanStackProvider } from "@/components/TanStackProvider/TanStackProvider";
+import AuthProvider  from "@/components/AuthProvider/AuthProvider";
+import Header from "@/components/Header/Header";
+import Footer from "@/components/Footer/Footer";
+
+const inter = Inter({ subsets: ["latin"] });
+
+export const metadata: Metadata = {
+  title: "NoteHub",
+  description: "Your best place to keep notes",
+};
+
+interface RootLayoutProps {
   children: React.ReactNode;
-}) {
-  return <>{children}</>;
+  modal: React.ReactNode; 
+}
+
+export default function RootLayout({ children, modal }: RootLayoutProps) {
+  return (
+    <html lang="uk">
+      <body className={inter.className}>
+        <TanStackProvider>
+          <AuthProvider>
+            <Header />
+            
+            <main>
+              {children}
+            </main>
+
+            {modal}
+
+            <Footer />
+          </AuthProvider>
+        </TanStackProvider>
+      </body>
+    </html>
+  );
 }

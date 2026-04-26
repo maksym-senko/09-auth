@@ -9,7 +9,6 @@ import { ClearDraftOnSuccess } from '@/components/ClearDraftOnSuccess/ClearDraft
 import NotesList from '@/components/NoteList/NoteList';
 import styles from './page.module.css';
 
-// 1. Використовуємо унікальну назву інтерфейсу, щоб уникнути конфліктів
 interface PageNotesData {
   notes: Note[];
   totalPages: number;
