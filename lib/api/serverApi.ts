@@ -18,7 +18,6 @@ async function makeRequest<T>(
   const cookieStore = await cookies();
   const headers = new Headers(options?.headers || {});
   
-  // Add cookies to the request
   headers.set('Content-Type', 'application/json');
   
   const allCookies = cookieStore.getAll();
