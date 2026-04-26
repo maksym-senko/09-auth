@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { checkSession } from '@/lib/api/serverApi'; 
+import { checkSession } from '@/lib/api/serverApi';
+import axios from 'axios';
 
 const PRIVATE_ROUTES = ['/notes', '/profile', '/api/users/me'];
 const AUTH_ROUTES = ['/sign-in', '/sign-up'];
 
-export default async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
   const accessToken = request.cookies.get('accessToken')?.value;
@@ -14,14 +15,22 @@ export default async function middleware(request: NextRequest) {
   const isPrivateRoute = PRIVATE_ROUTES.some((route) => pathname.startsWith(route));
   const isAuthRoute = AUTH_ROUTES.some((route) => pathname.startsWith(route));
 
-  // --- ЛОГІКА ПОНОВЛЕННЯ СЕСІЇ ---
+  const response = NextResponse.next();
   let isValidSession = !!accessToken;
 
   if (!accessToken && refreshToken) {
     try {
-      const user = await checkSession();
-      if (user) {
+      const sessionResponse = await checkSession(); 
+      
+      if (sessionResponse) {
         isValidSession = true;
+        
+        const setCookie = sessionResponse.headers['set-cookie'];
+        
+        if (setCookie) {
+          const cookieValue = Array.isArray(setCookie) ? setCookie.join(', ') : setCookie;
+          response.headers.set('set-cookie', cookieValue);
+        }
       }
     } catch (error) {
       console.error('Middleware session refresh failed:', error);
@@ -29,27 +38,25 @@ export default async function middleware(request: NextRequest) {
     }
   }
 
-  // --- РЕДІРЕКТИ ---
-
   if (isPrivateRoute && !isValidSession) {
-    const signInUrl = new URL('/sign-in', request.url);
-    return NextResponse.redirect(signInUrl);
+    return NextResponse.redirect(new URL('/sign-in', request.url));
   }
 
   if (isAuthRoute && isValidSession) {
-    const homeUrl = new URL('/', request.url);
-    return NextResponse.redirect(homeUrl);
+    return NextResponse.redirect(new URL('/', request.url));
   }
 
-  return NextResponse.next();
+  return response;
 }
+
+export default proxy;
 
 export const config = {
   matcher: [
-    '/notes/:path*',
-    '/profile/:path*',
-    '/sign-in',
-    '/sign-up',
+    '/notes/:path*', 
+    '/profile/:path*', 
+    '/sign-in', 
+    '/sign-up', 
     '/api/users/me'
   ],
 };
