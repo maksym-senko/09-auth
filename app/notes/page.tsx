@@ -1,13 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, ChangeEvent } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { fetchNotes } from '@/lib/api/clientApi';
-import { NOTE_TAGS, NoteTag } from '@/types/note';
+import { NOTE_TAGS, NoteTag, Note } from '@/types/note';
 import { ClearDraftOnSuccess } from '@/components/ClearDraftOnSuccess/ClearDraftOnSuccess';
 import NotesList from '@/components/NoteList/NoteList';
 import styles from './page.module.css';
+
+// 1. Використовуємо унікальну назву інтерфейсу, щоб уникнути конфліктів
+interface PageNotesData {
+  notes: Note[];
+  totalPages: number;
+}
 
 export default function NotesPage() {
   const [currentPage, setCurrentPage] = useState(1);
@@ -15,26 +21,33 @@ export default function NotesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setSearchQuery(value);
-    
+  const handleSearchChange = (e: ChangeEvent<HTMLInputElement>): void => {
+    setSearchQuery(e.target.value);
+  };
+
+  useEffect(() => {
     const timeout = setTimeout(() => {
-      setDebouncedSearch(value);
+      setDebouncedSearch(searchQuery);
       setCurrentPage(1);
     }, 500);
     
     return () => clearTimeout(timeout);
-  };
+  }, [searchQuery]);
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error } = useQuery<PageNotesData>({
     queryKey: ['notes', currentPage, selectedTag, debouncedSearch],
-    queryFn: () => fetchNotes({
-      page: currentPage,
-      perPage: 12,
-      tag: selectedTag === 'all' ? undefined : (selectedTag as NoteTag),
-      search: debouncedSearch || undefined,
-    }),
+    queryFn: async () => {
+      const res = await fetchNotes({
+        page: currentPage,
+        perPage: 12,
+        tag: selectedTag === 'all' ? undefined : (selectedTag as NoteTag),
+        search: debouncedSearch || undefined,
+      });
+
+      // 2. КЛЮЧОВЕ ВИПРАВЛЕННЯ: Подвійне приведення типів
+      // Це каже TS: "Я впевнений, що тут будуть notes та totalPages"
+      return res as unknown as PageNotesData;
+    },
   });
 
   const handleTagFilter = (tag: string) => {
@@ -42,30 +55,8 @@ export default function NotesPage() {
     setCurrentPage(1);
   };
 
-  if (isLoading) {
-    return (
-      <main className={styles.main}>
-        <div className={styles.container}>
-          <div className={styles.loading}>
-            <div className={styles.spinner}></div>
-            <p>Loading notes...</p>
-          </div>
-        </div>
-      </main>
-    );
-  }
-
-  if (error) {
-    return (
-      <main className={styles.main}>
-        <div className={styles.container}>
-          <div className={styles.error}>
-            <p>Error loading notes. Please try again later.</p>
-          </div>
-        </div>
-      </main>
-    );
-  }
+  if (isLoading) return <main className={styles.main}><div className={styles.spinner}></div></main>;
+  if (error) return <main className={styles.main}><div>Error loading notes.</div></main>;
 
   const notes = data?.notes || [];
   const totalPages = data?.totalPages || 1;
@@ -81,7 +72,6 @@ export default function NotesPage() {
           </Link>
         </div>
 
-        {/* Search input */}
         <div className={styles.searchSection}>
           <input
             type="text"
@@ -92,7 +82,6 @@ export default function NotesPage() {
           />
         </div>
 
-        {/* Tag filters */}
         <div className={styles.tagsSection}>
           <button
             onClick={() => handleTagFilter('all')}
@@ -112,36 +101,15 @@ export default function NotesPage() {
         </div>
 
         {notes.length === 0 ? (
-          <div className={styles.empty}>
-            <p>No notes found. Create your first note!</p>
-          </div>
+          <div className={styles.empty}>No notes found.</div>
         ) : (
           <>
-            <div className={styles.resultsCount}>
-              Found {notes.length} note{notes.length !== 1 ? 's' : ''}
-            </div>
             <NotesList notes={notes} />
-            
-            {/* Pagination */}
             {totalPages > 1 && (
               <div className={styles.pagination}>
-                <button
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                  className={styles.pageButton}
-                >
-                  Previous
-                </button>
-                <span className={styles.pageInfo}>
-                  Page {currentPage} of {totalPages}
-                </span>
-                <button
-                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                  disabled={currentPage === totalPages}
-                  className={styles.pageButton}
-                >
-                  Next
-                </button>
+                <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>Prev</button>
+                <span>{currentPage} / {totalPages}</span>
+                <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>Next</button>
               </div>
             )}
           </>

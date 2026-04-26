@@ -3,11 +3,11 @@
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { fetchNotes } from '@/lib/api/clientApi';
-import  NoteList  from '@/components/NoteList/NoteList';
+import NoteList from '@/components/NoteList/NoteList';
 import { Pagination } from '@/components/Pagination/Pagination';
-import { Note } from '@/types/note';
+import { Note, NoteTag } from '@/types/note';
 
-interface NotesResponse {
+interface LocalNotesData {
   notes: Note[];
   totalPages: number;
 }
@@ -19,13 +19,20 @@ export const NotesPage = ({ tag }: { tag?: string }) => {
 
   const currentPage = Number(searchParams.get('page')) || 1;
 
-  const { data, isLoading, isError } = useQuery<NotesResponse>({
+  const { data, isLoading, isError } = useQuery<LocalNotesData>({
     queryKey: ['notes', tag, currentPage],
-    queryFn: () => fetchNotes({ tag, page: currentPage }),
+    queryFn: async () => {
+      const response = await fetchNotes({ 
+        tag: tag as NoteTag | undefined, 
+        page: currentPage 
+      });
+      
+      return response as unknown as LocalNotesData;
+    },
   });
 
   const handlePageClick = (event: { selected: number }) => {
-    const params = new URLSearchParams(searchParams);
+    const params = new URLSearchParams(searchParams.toString());
     params.set('page', (event.selected + 1).toString());
     replace(`${pathname}?${params.toString()}`);
   };
@@ -37,11 +44,13 @@ export const NotesPage = ({ tag }: { tag?: string }) => {
     <div>
       <NoteList notes={data?.notes ?? []} />
       
-      <Pagination 
-        pageCount={data?.totalPages ?? 1} 
-        onPageChange={handlePageClick}
-        forcePage={currentPage - 1}
-      />
+      {data && data.totalPages > 1 && (
+        <Pagination 
+          pageCount={data.totalPages} 
+          onPageChange={handlePageClick}
+          forcePage={currentPage - 1}
+        />
+      )}
     </div>
   );
 };
