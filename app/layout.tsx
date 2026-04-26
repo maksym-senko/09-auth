@@ -1,0 +1,48 @@
+import type { Metadata } from 'next';
+import { Roboto } from 'next/font/google';
+import Providers from './providers';
+import Header from '@/components/Header/Header';
+import Footer from '@/components/Footer/Footer';
+import './globals.css';
+
+const roboto = Roboto({
+  weight: ['400', '500', '700'],
+  variable: '--font-roboto',
+  display: 'swap',
+  subsets: ['latin', 'cyrillic'],
+});
+
+export const metadata: Metadata = {
+  title: 'NoteHub | Ваш особистий менеджер нотаток',
+  description:
+    'Створюйте, редагуйте та організовуйте свої нотатки. Простий та зручний інструмент для ведення записів.',
+  openGraph: {
+    title: 'NoteHub - Менеджер нотаток',
+    description: 'Організуйте свої думки з NoteHub',
+    url: 'https://your-vercel-app.vercel.app',
+    images: ['https://ac.goit.global/fullstack/react/notehub-og-meta.jpg'],
+  },
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html 
+      lang="uk" 
+      className={roboto.variable} 
+      suppressHydrationWarning
+      data-scroll-behavior="smooth"
+    >
+      <body suppressHydrationWarning className="antialiased">
+        <Providers>
+          <Header />
+          <main>{children}</main>
+          <Footer />
+        </Providers>
+      </body>
+    </html>
+  );
+}
