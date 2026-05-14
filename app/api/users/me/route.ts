@@ -23,10 +23,10 @@ export async function GET() {
     if (isAxiosError(error)) {
       return NextResponse.json(
         { 
-          error: error.response?.data?.message || error.message,
+          error: error.response?.data?.message || 'Unauthorized',
           response: error.response?.data 
         },
-        { status: error.response?.status || 500 }
+        { status: error.response?.status || 401 }
       );
     }
 
@@ -55,10 +55,10 @@ export async function PATCH(req: NextRequest) {
     if (isAxiosError(error)) {
       return NextResponse.json(
         { 
-          error: error.response?.data?.message || error.message,
+          error: error.response?.data?.message || 'Bad Request',
           response: error.response?.data 
         },
-        { status: error.response?.status || 500 }
+        { status: error.response?.status || 400 }
       );
     }
 
