@@ -6,6 +6,7 @@ import { isAxiosError } from 'axios';
 
 export const dynamic = 'force-dynamic';
 
+// --- GET ---
 export async function GET() {
   try {
     const cookieStore = await cookies();
@@ -18,25 +19,26 @@ export async function GET() {
 
     return NextResponse.json(data);
   } catch (error) {
-    logErrorResponse(error, 'GET /api/users/me');
+    logErrorResponse(error, '[API_USERS_ME_GET]');
 
     if (isAxiosError(error)) {
-      return NextResponse.json(error.response?.data, {
-        status: error.response?.status,
-      });
+      return NextResponse.json(
+        { 
+          message: error.message, 
+          response: error.response?.data 
+        },
+        { status: error.response?.status || 500 }
+      );
     }
 
     return NextResponse.json(
-      {
-        message: 'Server error',
-      },
-      {
-        status: 500,
-      }
+      { message: 'Internal Server Error' },
+      { status: 500 }
     );
   }
 }
 
+// --- PATCH ---
 export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
@@ -50,21 +52,21 @@ export async function PATCH(req: NextRequest) {
 
     return NextResponse.json(data);
   } catch (error) {
-    logErrorResponse(error, 'PATCH /api/users/me');
+    logErrorResponse(error, '[API_USERS_ME_PATCH]');
 
     if (isAxiosError(error)) {
-      return NextResponse.json(error.response?.data, {
-        status: error.response?.status,
-      });
+      return NextResponse.json(
+        { 
+          message: error.message, 
+          response: error.response?.data 
+        },
+        { status: error.response?.status || 500 }
+      );
     }
 
     return NextResponse.json(
-      {
-        message: 'Server error',
-      },
-      {
-        status: 500,
-      }
+      { message: 'Internal Server Error' },
+      { status: 500 }
     );
   }
 }
