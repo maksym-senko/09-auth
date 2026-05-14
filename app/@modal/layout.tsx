@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import "./globals.css";
+import "../globals.css";
 import { TanStackProvider } from "@/components/TanStackProvider/TanStackProvider";
 import AuthProvider  from "@/components/AuthProvider/AuthProvider";
 import Header from "@/components/Header/Header";

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { api } from '@/lib/api/api';
-import { logErrorResponse } from '@/lib/api/logErrorResponse.ts'; 
+import { logErrorResponse } from '@/lib/api/logErrorResponse'; 
 import axios from 'axios';
 
 export const dynamic = 'force-dynamic';

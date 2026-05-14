@@ -1,10 +1,26 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { checkSession } from '@/lib/api/serverApi';
-import axios from 'axios';
 
-const PRIVATE_ROUTES = ['/notes', '/profile', '/api/users/me'];
+const PRIVATE_ROUTES = ['/notes', '/profile'];
 const AUTH_ROUTES = ['/sign-in', '/sign-up'];
+
+function parseSetCookie(cookieStr: string) {
+  const parts = cookieStr.split(';').map(p => p.trim());
+  const [nameValue] = parts;
+  const [name, value] = nameValue.split('=');
+  const options: Record<string, string | boolean> = {};
+  for (let i = 1; i < parts.length; i++) {
+    const part = parts[i];
+    if (part.includes('=')) {
+      const [key, val] = part.split('=');
+      options[key.toLowerCase()] = val;
+    } else {
+      options[part.toLowerCase()] = true;
+    }
+  }
+  return { name, value, options };
+}
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -28,8 +44,11 @@ export async function proxy(request: NextRequest) {
         const setCookie = sessionResponse.headers['set-cookie'];
         
         if (setCookie) {
-          const cookieValue = Array.isArray(setCookie) ? setCookie.join(', ') : setCookie;
-          response.headers.set('set-cookie', cookieValue);
+          const cookiesArray = Array.isArray(setCookie) ? setCookie : [setCookie];
+          for (const cookieStr of cookiesArray) {
+            const { name, value, options } = parseSetCookie(cookieStr);
+            response.cookies.set(name, value, options);
+          }
         }
       }
     } catch (error) {
@@ -56,7 +75,6 @@ export const config = {
     '/notes/:path*', 
     '/profile/:path*', 
     '/sign-in', 
-    '/sign-up', 
-    '/api/users/me'
+    '/sign-up'
   ],
 };
