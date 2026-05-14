@@ -18,21 +18,21 @@ export async function GET() {
 
     return NextResponse.json(data);
   } catch (error) {
-    logErrorResponse(error, '[API_USERS_ME_GET]');
+    logErrorResponse(error, 'GET /api/users/me');
 
     if (isAxiosError(error)) {
-      return NextResponse.json(
-        { 
-          error: error.response?.data?.message || error.message,
-          response: error.response?.data || null
-        },
-        { status: error.response?.status || 500 }
-      );
+      return NextResponse.json(error.response?.data, {
+        status: error.response?.status,
+      });
     }
 
     return NextResponse.json(
-      { error: 'Internal Server Error', response: null },
-      { status: 500 }
+      {
+        message: 'Server error',
+      },
+      {
+        status: 500,
+      }
     );
   }
 }
@@ -50,21 +50,21 @@ export async function PATCH(req: NextRequest) {
 
     return NextResponse.json(data);
   } catch (error) {
-    logErrorResponse(error, '[API_USERS_ME_PATCH]');
+    logErrorResponse(error, 'PATCH /api/users/me');
 
     if (isAxiosError(error)) {
-      return NextResponse.json(
-        { 
-          error: error.response?.data?.message || error.message,
-          response: error.response?.data || null
-        },
-        { status: error.response?.status || 500 }
-      );
+      return NextResponse.json(error.response?.data, {
+        status: error.response?.status,
+      });
     }
 
     return NextResponse.json(
-      { error: 'Internal Server Error', response: null },
-      { status: 500 }
+      {
+        message: 'Server error',
+      },
+      {
+        status: 500,
+      }
     );
   }
 }
