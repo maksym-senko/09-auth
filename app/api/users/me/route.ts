@@ -1,5 +1,5 @@
-import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import { isAxiosError } from 'axios';
 
 import { api } from '@/lib/api/api';
@@ -21,7 +21,7 @@ export async function GET() {
       status: res.status,
     });
   } catch (error) {
-    logErrorResponse(error, 'GET /api/users/me');
+    logErrorResponse(error);
 
     if (isAxiosError(error)) {
       return NextResponse.json(error.response?.data, {
@@ -40,10 +40,10 @@ export async function GET() {
   }
 }
 
-export async function PATCH(req: Request) {
+export async function PATCH(request: Request) {
   try {
     const cookieStore = await cookies();
-    const body = await req.json();
+    const body = await request.json();
 
     const res = await api.patch('/users/me', body, {
       headers: {
@@ -55,7 +55,7 @@ export async function PATCH(req: Request) {
       status: res.status,
     });
   } catch (error) {
-    logErrorResponse(error, 'PATCH /api/users/me');
+    logErrorResponse(error);
 
     if (isAxiosError(error)) {
       return NextResponse.json(error.response?.data, {
