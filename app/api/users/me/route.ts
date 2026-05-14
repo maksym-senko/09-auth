@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { api } from '@/lib/api/api';
-import { logErrorResponse } from '@/lib/api/logErrorResponse'; 
-import axios from 'axios';
+import { logErrorResponse } from '@/lib/api/logErrorResponse';
+import { isAxiosError } from 'axios';
 
 export const dynamic = 'force-dynamic';
 
-// --- GET ---
 export async function GET() {
   try {
     const cookieStore = await cookies();
@@ -21,24 +20,20 @@ export async function GET() {
   } catch (error) {
     logErrorResponse(error, '[API_USERS_ME_GET]');
 
-    if (axios.isAxiosError(error)) {
+    if (isAxiosError(error)) {
       return NextResponse.json(
-        { 
-          error: error.response?.data?.message || 'Unauthorized',
-          response: error.response?.data 
-        },
-        { status: error.response?.status || 401 }
+        { error: error.response?.data?.message || 'Failed to fetch user' },
+        { status: error.response?.status || 500 }
       );
     }
 
     return NextResponse.json(
-      { error: 'An unexpected error occurred', response: null },
+      { error: 'Internal Server Error' },
       { status: 500 }
     );
   }
 }
 
-// --- PATCH ---
 export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
@@ -54,18 +49,15 @@ export async function PATCH(req: NextRequest) {
   } catch (error) {
     logErrorResponse(error, '[API_USERS_ME_PATCH]');
 
-    if (axios.isAxiosError(error)) {
+    if (isAxiosError(error)) {
       return NextResponse.json(
-        { 
-          error: error.response?.data?.message || 'Bad Request',
-          response: error.response?.data 
-        },
-        { status: error.response?.status || 400 }
+        { error: error.response?.data?.message || 'Failed to update user' },
+        { status: error.response?.status || 500 }
       );
     }
 
     return NextResponse.json(
-      { error: 'An unexpected error occurred', response: null },
+      { error: 'Internal Server Error' },
       { status: 500 }
     );
   }
