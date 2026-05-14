@@ -22,13 +22,16 @@ export async function GET() {
 
     if (isAxiosError(error)) {
       return NextResponse.json(
-        { error: error.response?.data?.message || 'Failed to fetch user' },
+        { 
+          error: error.response?.data?.message || error.message,
+          response: error.response?.data 
+        },
         { status: error.response?.status || 500 }
       );
     }
 
     return NextResponse.json(
-      { error: 'Internal Server Error' },
+      { error: 'An unexpected error occurred', response: null },
       { status: 500 }
     );
   }
@@ -51,13 +54,16 @@ export async function PATCH(req: NextRequest) {
 
     if (isAxiosError(error)) {
       return NextResponse.json(
-        { error: error.response?.data?.message || 'Failed to update user' },
+        { 
+          error: error.response?.data?.message || error.message,
+          response: error.response?.data 
+        },
         { status: error.response?.status || 500 }
       );
     }
 
     return NextResponse.json(
-      { error: 'Internal Server Error' },
+      { error: 'An unexpected error occurred', response: null },
       { status: 500 }
     );
   }
