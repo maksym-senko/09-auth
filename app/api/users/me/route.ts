@@ -23,15 +23,15 @@ export async function GET() {
     if (isAxiosError(error)) {
       return NextResponse.json(
         { 
-          error: error.response?.data?.message || 'Unauthorized',
-          response: error.response?.data 
+          error: error.response?.data?.message || error.message,
+          response: error.response?.data || null
         },
-        { status: error.response?.status || 401 }
+        { status: error.response?.status || 500 }
       );
     }
 
     return NextResponse.json(
-      { error: 'An unexpected error occurred', response: null },
+      { error: 'Internal Server Error', response: null },
       { status: 500 }
     );
   }
@@ -55,15 +55,15 @@ export async function PATCH(req: NextRequest) {
     if (isAxiosError(error)) {
       return NextResponse.json(
         { 
-          error: error.response?.data?.message || 'Bad Request',
-          response: error.response?.data 
+          error: error.response?.data?.message || error.message,
+          response: error.response?.data || null
         },
-        { status: error.response?.status || 400 }
+        { status: error.response?.status || 500 }
       );
     }
 
     return NextResponse.json(
-      { error: 'An unexpected error occurred', response: null },
+      { error: 'Internal Server Error', response: null },
       { status: 500 }
     );
   }
