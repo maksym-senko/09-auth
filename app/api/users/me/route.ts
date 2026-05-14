@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { isAxiosError } from 'axios';
-
 import { api } from '@/lib/api/api';
 import { logErrorResponse } from '@/lib/api/logErrorResponse';
+import { isAxiosError } from 'axios';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,7 +20,7 @@ export async function GET() {
       status: res.status,
     });
   } catch (error) {
-    logErrorResponse(error);
+    logErrorResponse(error, 'API_USERS_ME_GET');
 
     if (isAxiosError(error)) {
       return NextResponse.json(error.response?.data, {
@@ -40,10 +39,10 @@ export async function GET() {
   }
 }
 
-export async function PATCH(request: Request) {
+export async function PATCH(req: Request) {
   try {
+    const body = await req.json();
     const cookieStore = await cookies();
-    const body = await request.json();
 
     const res = await api.patch('/users/me', body, {
       headers: {
@@ -55,7 +54,7 @@ export async function PATCH(request: Request) {
       status: res.status,
     });
   } catch (error) {
-    logErrorResponse(error);
+    logErrorResponse(error, 'API_USERS_ME_PATCH');
 
     if (isAxiosError(error)) {
       return NextResponse.json(error.response?.data, {
