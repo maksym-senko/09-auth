@@ -20,6 +20,7 @@ export async function GET() {
       status: res.status,
     });
   } catch (error) {
+
     logErrorResponse(error, 'API_USERS_ME_GET');
 
     if (isAxiosError(error)) {
