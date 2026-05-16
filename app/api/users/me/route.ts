@@ -23,14 +23,25 @@ export async function GET() {
     logErrorResponse(error, 'API_USERS_ME_GET');
 
     if (isAxiosError(error)) {
-      return NextResponse.json(error.response?.data, {
-        status: error.status,
-      });
+      return NextResponse.json(
+        {
+          error: {
+            message: error.message,
+            response: error.response?.data,
+          },
+        },
+        {
+          status: error.response?.status || 500,
+        }
+      );
     }
 
     return NextResponse.json(
       {
-        message: 'Something went wrong',
+        error: {
+          message: 'Something went wrong',
+          response: null,
+        },
       },
       {
         status: 500,
@@ -57,14 +68,25 @@ export async function PATCH(req: Request) {
     logErrorResponse(error, 'API_USERS_ME_PATCH');
 
     if (isAxiosError(error)) {
-      return NextResponse.json(error.response?.data, {
-        status: error.status,
-      });
+      return NextResponse.json(
+        {
+          error: {
+            message: error.message,
+            response: error.response?.data,
+          },
+        },
+        {
+          status: error.response?.status || 500,
+        }
+      );
     }
 
     return NextResponse.json(
       {
-        message: 'Something went wrong',
+        error: {
+          message: 'Something went wrong',
+          response: null,
+        },
       },
       {
         status: 500,
