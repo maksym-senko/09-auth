@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { getMe } from '@/lib/api/serverApi'; 
 import { api } from '@/lib/api/api';
 import { isAxiosError } from 'axios';
 
@@ -7,17 +8,9 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const cookieStore = await cookies();
+    const data = await getMe();
 
-    const res = await api.get('/users/me', {
-      headers: {
-        Cookie: cookieStore.toString(),
-      },
-    });
-
-    return NextResponse.json(res.data, {
-      status: res.status,
-    });
+    return NextResponse.json(data, { status: 200 });
   } catch (error) {
     console.error(error);
 
@@ -38,15 +31,11 @@ export async function GET() {
 
     return NextResponse.json(
       {
-        error: {
-          message: 'Something went wrong',
-        },
+        error: { message: 'Something went wrong' },
         message: 'Something went wrong',
         response: null,
       },
-      {
-        status: 500,
-      }
+      { status: 500 }
     );
   }
 }
@@ -55,16 +44,19 @@ export async function PATCH(req: Request) {
   try {
     const body = await req.json();
     const cookieStore = await cookies();
+    
+    const cookieString = cookieStore
+      .getAll()
+      .map((c) => `${c.name}=${c.value}`)
+      .join('; ');
 
     const res = await api.patch('/users/me', body, {
       headers: {
-        Cookie: cookieStore.toString(),
+        Cookie: cookieString,
       },
     });
 
-    return NextResponse.json(res.data, {
-      status: res.status,
-    });
+    return NextResponse.json(res.data, { status: res.status });
   } catch (error) {
     console.error(error);
 
@@ -85,15 +77,11 @@ export async function PATCH(req: Request) {
 
     return NextResponse.json(
       {
-        error: {
-          message: 'Something went wrong',
-        },
+        error: { message: 'Something went wrong' },
         message: 'Something went wrong',
         response: null,
       },
-      {
-        status: 500,
-      }
+      { status: 500 }
     );
   }
 }
