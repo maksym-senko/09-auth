@@ -20,7 +20,11 @@ export interface CreateNoteData {
   tag: NoteTag;
 }
 
-const baseURL = (process.env.NEXT_PUBLIC_API_URL || "https://notehub-goit.vercel.app") + "/api";
+const isServer = typeof window === "undefined";
+
+const baseURL = isServer
+  ? "https://notehub-goit.vercel.app/api" 
+  : "/api"; 
 
 export const api = axios.create({
   baseURL,
