@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { api } from '@/lib/api/api';
-import { logErrorResponse } from '@/lib/api/logErrorResponse';
 import { isAxiosError } from 'axios';
 
 export const dynamic = 'force-dynamic';
@@ -20,16 +19,16 @@ export async function GET() {
       status: res.status,
     });
   } catch (error) {
-
-    logErrorResponse(error, 'API_USERS_ME_GET');
+    console.error(error);
 
     if (isAxiosError(error)) {
       return NextResponse.json(
         {
           error: {
             message: error.message,
-            response: error.response?.data,
           },
+          message: error.message,
+          response: error.response?.data,
         },
         {
           status: error.response?.status || 500,
@@ -41,8 +40,9 @@ export async function GET() {
       {
         error: {
           message: 'Something went wrong',
-          response: null,
         },
+        message: 'Something went wrong',
+        response: null,
       },
       {
         status: 500,
@@ -66,15 +66,16 @@ export async function PATCH(req: Request) {
       status: res.status,
     });
   } catch (error) {
-    logErrorResponse(error, 'API_USERS_ME_PATCH');
+    console.error(error);
 
     if (isAxiosError(error)) {
       return NextResponse.json(
         {
           error: {
             message: error.message,
-            response: error.response?.data,
           },
+          message: error.message,
+          response: error.response?.data,
         },
         {
           status: error.response?.status || 500,
@@ -86,8 +87,9 @@ export async function PATCH(req: Request) {
       {
         error: {
           message: 'Something went wrong',
-          response: null,
         },
+        message: 'Something went wrong',
+        response: null,
       },
       {
         status: 500,
