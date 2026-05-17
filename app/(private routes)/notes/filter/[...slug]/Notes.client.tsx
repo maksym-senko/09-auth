@@ -1,112 +1,74 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { fetchNotes } from '@/lib/api/clientApi';
-import { NoteTag } from '@/types/note';
-import NotesList from '@/components/NoteList/NoteList';
+import { useDebounce } from 'use-debounce'; 
+import { fetchNotes, NotesResponse } from '@/lib/api/api';
+import  NoteList  from '@/components/NoteList/NoteList';
 import { Pagination } from '@/components/Pagination/Pagination';
-import { SearchBox } from '@/components/SearchBox/SearchBox';
-import styles from './page.module.css';
-import Link from 'next/link';
+import { SearchBox } from '@/components/SearchBox/SearchBox'; 
+import { Modal } from '@/components/Modal/Modal';
+import  NoteForm  from '@/components/NoteForm/NoteForm';
 
-interface NotesClientProps {
-  initialFilter: string;
-}
 
-const DEBOUNCE_DELAY = 300;
-const PER_PAGE = 12;
+export default function NotesClient({ tag }: { tag?: string }) {
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const { replace } = useRouter();
 
-export default function NotesClient({ initialFilter }: NotesClientProps) {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
+  const [searchValue, setSearchValue] = useState(searchParams.get('search') || '');
+  const [debouncedSearch] = useDebounce(searchValue, 500);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const tag = initialFilter === 'all' ? undefined : (initialFilter as NoteTag);
+  const currentPage = Number(searchParams.get('page')) || 1;
 
-  useEffect(() => {
-    const debounceTimer = setTimeout(() => {
-      setDebouncedSearchQuery(searchQuery);
-      setCurrentPage(1); 
-    }, DEBOUNCE_DELAY);
-
-    return () => clearTimeout(debounceTimer);
-  }, [searchQuery]);
-
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['filteredNotes', tag, debouncedSearchQuery, currentPage],
-    queryFn: () => fetchNotes({ 
-      page: currentPage,
-      perPage: PER_PAGE, 
-      tag: tag,
-      search: debouncedSearchQuery,
-    }),
+  const { data, isLoading, isError } = useQuery<NotesResponse>({
+    queryKey: ['notes', tag, currentPage, debouncedSearch],
+    queryFn: () => fetchNotes({ tag, page: currentPage, search: debouncedSearch }),
   });
 
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams);
+    if (debouncedSearch) params.set('search', debouncedSearch);
+    else params.delete('search');
+    params.set('page', '1');
+    replace(`${pathname}?${params.toString()}`);
+  }, [debouncedSearch]);
 
-  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-  }, []);
-
-  const handlePageChange = (selectedItem: { selected: number }) => {
-    setCurrentPage(selectedItem.selected + 1);
+  const handlePageChange = ({ selected }: { selected: number }) => {
+    const params = new URLSearchParams(searchParams);
+    params.set('page', (selected + 1).toString());
+    replace(`${pathname}?${params.toString()}`);
   };
 
-  if (isLoading) {
-    return (
-      <div className={styles.loading}>
-        <div className={styles.spinner}></div>
-        <p>Loading notes...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className={styles.error}>
-        <p>Error loading notes. Please try again later.</p>
-        <Link href="/notes" className={styles.backLink}>
-          ← Back to all notes
-        </Link>
-      </div>
-    );
-  }
-
-  const notes = data?.notes || [];
-  const totalPages = data?.pages || 0;
+  if (isError) return <div>Error loading data.</div>;
 
   return (
-    <>
-      <SearchBox value={searchQuery} onChange={handleSearchChange} />
+    <div className="flex flex-col gap-6">
+      <div className="flex justify-between items-center gap-4">
+        <SearchBox 
+          value={searchValue} 
+          onChange={(e) => setSearchValue(e.target.value)} 
+        />
+        <button onClick={() => setIsModalOpen(true)}>Add Note</button>
+      </div>
 
-
-      {notes.length === 0 ? (
-        <div className={styles.empty}>
-          <p>
-            No notes found 
-            {debouncedSearchQuery && ` matching "${debouncedSearchQuery}"`}
-          </p>
-          <Link href="/notes/action/create" className={styles.createLink}>
-            Create your first note
-          </Link>
-        </div>
-      ) : (
-        <>
-          <div className={styles.resultsCount}>
-            Found {notes.length} note{notes.length !== 1 ? 's' : ''}
-          </div>
-          
-          <NotesList notes={notes} />
-          
-          {totalPages > 1 && (
-            <Pagination 
-              pageCount={totalPages}
-              forcePage={currentPage - 1} 
-              onPageChange={handlePageChange}
-            />
-          )}
-        </>
+      {isLoading ? <div>Loading...</div> : <NoteList notes={data?.notes ?? []} />}
+      
+      {data && data.totalPages > 1 && (
+        <Pagination 
+          pageCount={data.totalPages} 
+          onPageChange={handlePageChange}
+          forcePage={currentPage - 1} 
+        />
       )}
-    </>
+
+{isModalOpen && (
+  <Modal onClose={() => setIsModalOpen(false)}>
+    <NoteForm />
+  </Modal>
+)}
+    </div>
   );
 }

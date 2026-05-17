@@ -36,7 +36,7 @@ export async function GET() {
 
     return NextResponse.json(
       {
-        error: 'Something went wrong',
+        error: error instanceof Error ? error.message : 'Something went wrong',
         response: null,
       },
       {
@@ -77,7 +77,7 @@ export async function PATCH(req: Request) {
 
     return NextResponse.json(
       {
-        error: 'Something went wrong',
+        error: error instanceof Error ? error.message : 'Something went wrong',
         response: null,
       },
       {
