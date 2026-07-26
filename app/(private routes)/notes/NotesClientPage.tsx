@@ -4,21 +4,32 @@ import { useState, useEffect, ChangeEvent } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { fetchNotes } from '@/lib/api/clientApi';
-import { NOTE_TAGS, NoteTag, Note } from '@/types/note';
+import { NOTE_TAGS, NoteTag, Note, NotesResponse } from '@/types/note';
 import { ClearDraftOnSuccess } from '@/components/ClearDraftOnSuccess/ClearDraftOnSuccess';
 import NotesList from '@/components/NoteList/NoteList';
 import styles from './page.module.css';
 
-interface PageNotesData {
-  notes: Note[];
-  totalPages: number;
+interface NotesClientPageProps {
+  initialNotes: Note[];
+  initialPages: number;
+  initialTotal: number;
+  initialPage: number;
+  initialSearch: string;
+  initialTag: string;
 }
 
-export default function NotesPage() {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [selectedTag, setSelectedTag] = useState<string>('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+export default function NotesClientPage({
+  initialNotes,
+  initialPages,
+  initialTotal,
+  initialPage,
+  initialSearch,
+  initialTag,
+}: NotesClientPageProps) {
+  const [currentPage, setCurrentPage] = useState(initialPage);
+  const [selectedTag, setSelectedTag] = useState<string>(initialTag || 'all');
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
+  const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
 
   const handleSearchChange = (e: ChangeEvent<HTMLInputElement>): void => {
     setSearchQuery(e.target.value);
@@ -29,24 +40,26 @@ export default function NotesPage() {
       setDebouncedSearch(searchQuery);
       setCurrentPage(1);
     }, 500);
-    
+
     return () => clearTimeout(timeout);
   }, [searchQuery]);
 
-  const { data, isLoading, error } = useQuery<PageNotesData>({
+  const isInitialState =
+    currentPage === 1 && selectedTag === 'all' && !debouncedSearch;
+
+  const { data, isLoading, error } = useQuery<NotesResponse>({
     queryKey: ['notes', currentPage, selectedTag, debouncedSearch],
     queryFn: async () => {
-      const res = await fetchNotes({
+      return await fetchNotes({
         page: currentPage,
         perPage: 12,
         tag: selectedTag === 'all' ? undefined : (selectedTag as NoteTag),
         search: debouncedSearch || undefined,
       });
-
-      // 2. КЛЮЧОВЕ ВИПРАВЛЕННЯ: Подвійне приведення типів
-      // Це каже TS: "Я впевнений, що тут будуть notes та totalPages"
-      return res as unknown as PageNotesData;
     },
+    initialData: isInitialState
+      ? { notes: initialNotes, pages: initialPages, total: initialTotal }
+      : undefined,
   });
 
   const handleTagFilter = (tag: string) => {
@@ -54,11 +67,22 @@ export default function NotesPage() {
     setCurrentPage(1);
   };
 
-  if (isLoading) return <main className={styles.main}><div className={styles.spinner}></div></main>;
-  if (error) return <main className={styles.main}><div>Error loading notes.</div></main>;
+  if (isLoading)
+    return (
+      <main className={styles.main}>
+        <div className={styles.spinner}></div>
+      </main>
+    );
+
+  if (error)
+    return (
+      <main className={styles.main}>
+        <div>Error loading notes.</div>
+      </main>
+    );
 
   const notes = data?.notes || [];
-  const totalPages = data?.totalPages || 1;
+  const pages = data?.pages || 1;
 
   return (
     <main className={styles.main}>
@@ -84,7 +108,9 @@ export default function NotesPage() {
         <div className={styles.tagsSection}>
           <button
             onClick={() => handleTagFilter('all')}
-            className={`${styles.tagFilter} ${selectedTag === 'all' ? styles.activeTag : ''}`}
+            className={`${styles.tagFilter} ${
+              selectedTag === 'all' ? styles.activeTag : ''
+            }`}
           >
             All
           </button>
@@ -92,7 +118,9 @@ export default function NotesPage() {
             <button
               key={tag}
               onClick={() => handleTagFilter(tag)}
-              className={`${styles.tagFilter} ${selectedTag === tag ? styles.activeTag : ''}`}
+              className={`${styles.tagFilter} ${
+                selectedTag === tag ? styles.activeTag : ''
+              }`}
             >
               {tag}
             </button>
@@ -104,11 +132,25 @@ export default function NotesPage() {
         ) : (
           <>
             <NotesList notes={notes} />
-            {totalPages > 1 && (
+            {pages > 1 && (
               <div className={styles.pagination}>
-                <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>Prev</button>
-                <span>{currentPage} / {totalPages}</span>
-                <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>Next</button>
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                >
+                  Prev
+                </button>
+                <span>
+                  {currentPage} / {pages}
+                </span>
+                <button
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(pages, p + 1))
+                  }
+                  disabled={currentPage === pages}
+                >
+                  Next
+                </button>
               </div>
             )}
           </>
