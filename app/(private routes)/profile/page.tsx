@@ -1,15 +1,15 @@
-import Image from 'next/image';
-import Link from 'next/link';
-import { Metadata } from 'next';
-import { getMe } from '@/lib/api/serverApi';
-import css from './page.module.css';
+import { Metadata } from "next";
+import Image from "next/image";
+import Link from "next/link";
+import { getMe } from "@/lib/api/serverApi";
+import css from "./ProfilePage.module.css";
 
 export const metadata: Metadata = {
-  title: 'Profile | NoteHub',
-  description: 'User profile page',
+  title: "Profile | NoteHub",
+  description: "Your personal profile page on NoteHub",
 };
 
-export default async function ProfilePage() {
+export default async function Profile() {
   const user = await getMe();
 
   return (
@@ -21,16 +21,18 @@ export default async function ProfilePage() {
             Edit Profile
           </Link>
         </div>
+
         <div className={css.avatarWrapper}>
           <Image
-            src={user.avatar}
-            alt="User Avatar"
+            src={user.avatar || "https://ac.goit.global/default-avatar.png"}
+            alt={`${user.username}'s avatar`}
             width={120}
             height={120}
             className={css.avatar}
             priority
           />
         </div>
+
         <div className={css.profileInfo}>
           <p>Username: {user.username}</p>
           <p>Email: {user.email}</p>

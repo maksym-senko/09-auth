@@ -16,7 +16,7 @@ export async function POST() {
         Cookie: `accessToken=${accessToken}; refreshToken=${refreshToken}`,
       },
     });
-
+    
     cookieStore.delete('accessToken');
     cookieStore.delete('refreshToken');
 

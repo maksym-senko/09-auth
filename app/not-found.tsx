@@ -1,29 +1,37 @@
-import type { Metadata } from 'next';
-import Link from 'next/link';
-import css from './NotFound.module.css';
-
-const BASE_URL = 'https://notehub-goit.vercel.app';
+import type { Metadata } from "next";
+import css from "./Home.module.css";
 
 export const metadata: Metadata = {
-  title: 'Page not found | NoteHub',
-  description: 'The requested page does not exist. Find your notes or create a new one.',
-  metadataBase: new URL(BASE_URL),
+  title: "404 - Сторінку не знайдено | NoteHub",
+  description:
+    "На жаль, сторінка, яку ви шукаєте, не існує або була переміщена.",
+
   openGraph: {
-    title: 'Page not found | NoteHub',
-    description: 'The requested page does not exist. Find your notes or create a new one.',
-    url: `${BASE_URL}/not-found`,
-    images: ['https://ac.goit.global/fullstack/react/notehub-og-meta.jpg'],
+    title: "404 - Сторінку не знайдено | NoteHub",
+    description:
+      "Ви потрапили на неіснуючу сторінку. Поверніться на головну, щоб продовжити роботу з нотатками.",
+    url: "https://notehub-your-username.vercel.app/404",
+    images: [
+      {
+        url: "https://ac.goit.global/fullstack/react/notehub-og-meta.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Page not found - NoteHub",
+      },
+    ],
+    type: "website",
   },
 };
 
-export default function NotFound() {
+const NotFoundPage = () => {
   return (
-    <div className={css.container}>
-      <h1 className={css.title}>404</h1>
-      <p className={css.message}>Oops! The page you are looking for doesn`t exist.</p>
-      <Link href="/notes/filter/all" className={css.link}>
-        Back to Notes
-      </Link>
+    <div style={{ padding: "20px" }}>
+      <h1 className={css.title}>404 - Page not found</h1>
+      <p className={css.description}>
+        Sorry, the page you are looking for does not exist.
+      </p>
     </div>
   );
-}
+};
+
+export default NotFoundPage;

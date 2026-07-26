@@ -1,33 +1,26 @@
-import Link from 'next/link';
-import css from './Sidebar.module.css';
+import Link from "next/link";
+import css from "@/components/SidebarNotes/SidebarNotes.module.css";
 
-const TAGS = [
-  { name: 'All notes', value: 'all' },
-  { name: 'Todo', value: 'Todo' },
-  { name: 'Work', value: 'Work' },
-  { name: 'Personal', value: 'Personal' },
-  { name: 'Meeting', value: 'Meeting' },
-  { name: 'Shopping', value: 'Shopping' },
-] as const;
+const TAGS = ["Todo", "Work", "Personal", "Meeting", "Shopping"];
 
-export default function SidebarDefault() {
+const NotesSidebar = () => {
   return (
-    <aside className={css.sidebar}>
-      <h2 className={css.title}>Filter by Tags</h2>
-      <nav>
-        <ul className={css.list}>
-          {TAGS.map((tag) => (
-            <li key={tag.value} className={css.listItem}>
-              <Link
-                href={`/notes/filter/${tag.value}`}
-                className={css.link}
-              >
-                {tag.name}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </nav>
-    </aside>
+    <ul className={css.menuList}>
+      <li className={css.menuItem}>
+        <Link href="/notes/filter/all" className={css.menuLink}>
+          All notes
+        </Link>
+      </li>
+
+      {TAGS.map((tag) => (
+        <li key={tag} className={css.menuItem}>
+          <Link href={`/notes/filter/${tag}`} className={css.menuLink}>
+            {tag}
+          </Link>
+        </li>
+      ))}
+    </ul>
   );
-}
+};
+
+export default NotesSidebar;

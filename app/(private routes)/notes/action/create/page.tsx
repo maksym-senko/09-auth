@@ -1,46 +1,32 @@
-import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
-import { createNote } from '@/lib/api/clientApi';
-import { NoteTag } from '@/types/note';
-import NoteForm from '@/components/NoteForm/NoteForm';
-import styles from './CreateNote.module.css';
+import type { Metadata } from "next";
+import NoteForm from "@/components/NoteForm/NoteForm";
+import css from "./CreateNote.module.css";
 
 export const metadata: Metadata = {
-  title: 'Створення нотатки | NoteHub',
-  description: 'Створіть нову нотатку. Ваші зміни автоматично зберігаються як чернетка.',
+  title: "Create New Note | NoteHub",
+  description: "Create and save your personal notes easily on NoteHub.",
   openGraph: {
-    title: 'Створення нової нотатки | NoteHub',
-    url: 'https://notehub-goit.vercel.app/notes/action/create',
-    images: ['https://ac.goit.global/fullstack/react/notehub-og-meta.jpg'],
+    title: "Create New Note | NoteHub",
+    description: "Start writing your next big idea on NoteHub.",
+    url: "https://your-domain.vercel.app/notes/action/create",
+    images: [
+      {
+        url: "https://ac.goit.global/fullstack/react/notehub-og-meta.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Create Note - NoteHub",
+      },
+    ],
+    type: "website",
   },
 };
 
 export default function CreateNotePage() {
-  async function createNoteAction(formData: FormData) {
-    'use server';
-    
-    const title = formData.get('title') as string;
-    const content = formData.get('content') as string;
-    const tag = formData.get('tag') as NoteTag;
-    
-    if (!title || !content || !tag) {
-      return { error: 'Усі поля обов’язкові' };
-    }
-    
-    try {
-      await createNote({ title, content, tag });
-    } catch (error) {
-      return { error: 'Помилка при створенні нотатки' };
-    }
-
-    redirect('/notes?created=1');
-  }
-
   return (
-    <main className={styles.main}>
-      <div className={styles.container}>
-        <h1 className={styles.title}>Create note</h1>
-        <NoteForm createNoteAction={createNoteAction} />
+    <main className={css.main}>
+      <div className={css.container}>
+        <h1 className={css.title}>Create note</h1>
+        <NoteForm />
       </div>
     </main>
   );

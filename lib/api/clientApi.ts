@@ -1,70 +1,87 @@
-import { api } from "./api";
-import { User } from "@/types/user";
-import { Note, NotesResponse, NoteTag } from "@/types/note";
+import { axiosInstance } from "./api";
+import type { Note, NoteTag } from "@/types/note";
+import type { User } from "@/types/user";
 
-interface FetchNotesParams {
-  page?: number;
-  perPage?: number;
-  tag?: NoteTag;
-  search?: string;
+export interface RegisterData {
+  email: string;
+  password: string;
 }
 
-// --- АВТОРИЗАЦІЯ ---
+export interface LoginData {
+  email: string;
+  password: string;
+}
 
-export const login = async (credentials: Pick<User, 'email'> & { password: string }): Promise<User> => {
-  const { data } = await api.post<User>("/auth/login", credentials);
-  return data;
+export interface FetchNotesParams {
+  page?: number;
+  perPage?: number;
+  search?: string;
+  tag?: string;
+}
+
+export interface NewNote {
+  title: string;
+  content: string;
+  tag: NoteTag;
+}
+
+export interface FetchNotesResponse {
+  notes: Note[];
+  totalPages: number;
+}
+
+// --- АУТЕНТИФІКАЦІЯ (AUTH) ---
+
+export const register = async (data: RegisterData): Promise<User> => {
+  const res = await axiosInstance.post<User>("/auth/register", data);
+  return res.data;
 };
 
-export const register = async (credentials: Pick<User, 'email'> & { password: string }): Promise<User> => {
-  const { data } = await api.post<User>("/auth/register", credentials);
-  return data;
+export const login = async (data: LoginData): Promise<User> => {
+  const res = await axiosInstance.post<User>("/auth/login", data);
+  return res.data;
 };
 
 export const logout = async (): Promise<void> => {
-  await api.post("/auth/logout");
+  await axiosInstance.post("/auth/logout");
 };
 
 export const checkSession = async (): Promise<User | null> => {
-  try {
-    const { data } = await api.get<User>("/auth/session");
-    return data;
-  } catch {
-    return null;
-  }
+  const res = await axiosInstance.get<User | null>("/auth/session");
+  return res.data;
 };
 
-// --- НОТАТКИ ---
-
-export const fetchNotes = async (params: FetchNotesParams): Promise<NotesResponse> => {
-  const { data } = await api.get<NotesResponse>("/notes", { params });
-  return data;
+// --- КОРИСТУВАЧІ (USERS) ---
+export const getMe = async (): Promise<User> => {
+  const res = await axiosInstance.get<User>("/users/me");
+  return res.data;
 };
 
-export const createNote = async (note: Pick<Note, 'title' | 'content' | 'tag'>): Promise<Note> => {
-  const { data } = await api.post<Note>("/notes", note);
-  return data;
+export const updateMe = async (userData: Partial<User>): Promise<User> => {
+  const res = await axiosInstance.patch<User>("/users/me", userData);
+  return res.data;
 };
 
+// --- НОТАТКИ (NOTES) ---
 
-export const deleteNote = async (id: string): Promise<Note> => {
-  const { data } = await api.delete<Note>(`/notes/${id}`);
-  return data;
+export const fetchNotes = async (
+  params: FetchNotesParams,
+): Promise<FetchNotesResponse> => {
+  const res = await axiosInstance.get<FetchNotesResponse>("/notes", { params });
+  return res.data;
 };
 
 export const fetchNoteById = async (id: string): Promise<Note> => {
-  const { data } = await api.get<Note>(`/notes/${id}`);
-  return data;
+  const res = await axiosInstance.get<Note>(`/notes/${id}`);
+  return res.data;
 };
 
-// --- КОРИСТУВАЧ ---
-
-export const getMe = async (): Promise<User> => {
-  const { data } = await api.get<User>("/users/me");
-  return data;
+export const createNote = async (noteData: NewNote): Promise<Note> => {
+  const res = await axiosInstance.post<Note>("/notes", noteData);
+  return res.data;
 };
 
-export const updateMe = async (user: Partial<User>): Promise<User> => {
-  const { data } = await api.patch<User>("/users/me", user);
-  return data;
+export const deleteNote = async (noteId: string): Promise<Note> => {
+  const res = await axiosInstance.delete<Note>(`/notes/${noteId}`);
+  return res.data;
 };

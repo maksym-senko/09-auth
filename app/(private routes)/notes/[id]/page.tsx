@@ -1,56 +1,64 @@
-import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
-import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query';
-import { fetchNoteById } from '@/lib/api/serverApi';
-import NoteDetailsClient from './NoteDetails.client';
+import { Metadata } from "next";
+import {
+  dehydrate,
+  HydrationBoundary,
+  QueryClient,
+} from "@tanstack/react-query";
+import { fetchNoteById } from "@/lib/api/serverApi";
+import NoteDetailsClient from "./NoteDetails.client";
 
-const BASE_URL = 'https://notehub-goit.vercel.app';
-
-interface PageProps {
+type Props = {
   params: Promise<{ id: string }>;
+};
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params;
+
+  const note = await fetchNoteById(id);
+
+  const title = `${note.title} | NoteHub`;
+  const description =
+    note.content.length > 160
+      ? note.content.substring(0, 157) + "..."
+      : note.content;
+
+  const url = `https://your-app-domain.vercel.app/notes/${id}`;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      url,
+      siteName: "NoteHub",
+      images: [
+        {
+          url: "https://ac.goit.global/fullstack/react/notehub-og-meta.jpg",
+          width: 1200,
+          height: 630,
+          alt: note.title,
+        },
+      ],
+      locale: "uk_UA",
+      type: "article",
+    },
+  };
 }
 
-export async function generateMetadata(props: PageProps): Promise<Metadata> {
-  const params = await props.params;
-  try {
-    const note = await fetchNoteById(params.id);
-    
-    return {
-      title: `${note.title} | NoteHub`,
-      description: note.content.substring(0, 160),
-      metadataBase: new URL(BASE_URL),
-      openGraph: {
-        title: note.title,
-        description: note.content.substring(0, 160),
-        url: `${BASE_URL}/notes/${params.id}`,
-        images: ['https://ac.goit.global/fullstack/react/notehub-og-meta.jpg'],
-      },
-    };
-  } catch {
-    return {
-      title: 'Note not found | NoteHub',
-    };
-  }
-}
-
-export default async function NoteDetailPage(props: PageProps) {
-  const params = await props.params;
-  const { id } = params;
+export default async function NoteDetailsPage({ params }: Props) {
+  const { id } = await params;
 
   const queryClient = new QueryClient();
 
-  try {
-    await queryClient.prefetchQuery({
-      queryKey: ['note', id],
-      queryFn: () => fetchNoteById(id),
-    });
-  } catch (error) {
-    notFound();
-  }
+  await queryClient.prefetchQuery({
+    queryKey: ["note", id],
+    queryFn: () => fetchNoteById(id),
+  });
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <NoteDetailsClient id={id} />
+      <NoteDetailsClient />
     </HydrationBoundary>
   );
 }

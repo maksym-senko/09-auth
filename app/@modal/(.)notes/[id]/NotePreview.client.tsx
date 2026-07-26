@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useRouter } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
-import { fetchNoteById } from '@/lib/api/clientApi';
-import { Modal } from '@/components/Modal/Modal';
-import styles from './NotePreview.module.css';
+import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+import { fetchNoteById } from "@/lib/api/clientApi";
+import Modal from "@/components/Modal/Modal";
+import css from "./NotePreview.module.css";
 
 interface NotePreviewClientProps {
   id: string;
@@ -14,36 +14,56 @@ export default function NotePreviewClient({ id }: NotePreviewClientProps) {
   const router = useRouter();
 
   const { data: note, isLoading, isError } = useQuery({
-    queryKey: ['note', id],
+    queryKey: ["note", id],
     queryFn: () => fetchNoteById(id),
-    staleTime: 1000 * 60 * 5,
+    refetchOnMount: false, 
   });
 
-  const handleClose = () => {
-    router.back();
-  };
+  const handleClose = () => router.back();
+
+  if (isLoading) {
+    return (
+      <Modal onClose={handleClose}>
+        <div className={css.container}>
+          <p>Loading...</p>
+        </div>
+      </Modal>
+    );
+  }
+
+  if (isError || !note) {
+    return (
+      <Modal onClose={handleClose}>
+        <div className={css.container}>
+          <p>Error: Could not load the note.</p>
+          <button className={css.backBtn} onClick={handleClose}>
+            Go back
+          </button>
+        </div>
+      </Modal>
+    );
+  }
 
   return (
     <Modal onClose={handleClose}>
-      {isLoading && <p className={styles.status}>Loading...</p>}
-      
-      {isError && (
-        <div className={styles.errorWrapper}>
-          <p>Could not load note data.</p>
-          <button onClick={handleClose} className={styles.closeBtn}>Close</button>
-        </div>
-      )}
+      <div className={css.container}>
+        <button className={css.backBtn} onClick={handleClose}>
+          ← Back
+        </button>
 
-      {note && (
-        <article className={styles.content}>
-          <h2 className={styles.title}>{note.title}</h2>
-          <div className={styles.tagBadge}>{note.tag}</div>
-          <p className={styles.text}>{note.content}</p>
-          <div className={styles.date}>
-            Created: {new Date(note.createdAt).toLocaleDateString()}
+        <div className={css.item}>
+          <div className={css.header}>
+            <h2>{note.title}</h2>
+            {note.tag && <span className={css.tag}>{note.tag}</span>}
           </div>
-        </article>
-      )}
+
+          <p className={css.content}>{note.content}</p>
+
+          <p className={css.date}>
+            {new Date(note.createdAt).toLocaleDateString()}
+          </p>
+        </div>
+      </div>
     </Modal>
   );
 }

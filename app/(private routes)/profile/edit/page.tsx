@@ -1,101 +1,58 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import Image from 'next/image';
-import css from './page.module.css';
-import { useAuthStore } from '@/lib/store/authStore';
-import { getMe, updateMe } from '@/lib/api/clientApi';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+import { useMutation } from "@tanstack/react-query";
+import { useAuthStore } from "@/lib/store/authStore";
+import { updateMe } from "@/lib/api/clientApi";
+import css from "./EditProfilePage.module.css";
 
-interface FormData {
-  username: string;
-}
-
-export default function EditProfilePage() {
+export default function ProfileEditPage() {
   const router = useRouter();
-  const { user, setUser } = useAuthStore();
-  const [formData, setFormData] = useState<FormData>({ username: '' });
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState('');
+    const { user, setUser } = useAuthStore();
+    
+  const [username, setUsername] = useState(user?.username || "");
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const userData = await getMe();
-        setUser(userData);
-        setFormData({ username: userData.username || '' });
-      } catch (err) {
-        console.error('Failed to fetch user data:', err);
-        setError('Failed to load profile');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchUserData();
-  }, [setUser]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { value } = e.currentTarget;
-    setFormData(prev => ({
-      ...prev,
-      username: value,
-    }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setError('');
-    setIsSaving(true);
-
-    try {
-      const updatedUser = await updateMe({
-        username: formData.username,
-      });
+  const mutation = useMutation({
+    mutationFn: (newUsername: string) => updateMe({ username: newUsername }),
+    onSuccess: (updatedUser) => {
       setUser(updatedUser);
-      router.push('/profile');
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to update profile';
-      setError(errorMessage);
-    } finally {
-      setIsSaving(false);
+      router.push("/profile");
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (username.trim()) {
+      mutation.mutate(username);
     }
   };
 
   const handleCancel = () => {
-    router.back();
+    router.push("/profile");
   };
 
-  if (isLoading) {
-    return (
-      <main className={css.mainContent}>
-        <p>Loading...</p>
-      </main>
-    );
-  }
-
   if (!user) {
-    return (
-      <main className={css.mainContent}>
-        <p>User not found</p>
-      </main>
-    );
+    return <div className={css.loading}>Loading profile data...</div>;
   }
 
   return (
     <main className={css.mainContent}>
-      <div className={css.profileCard}>
+
+      <div className={css.profileCard} key={user.username}>
         <h1 className={css.formTitle}>Edit Profile</h1>
 
-        <Image
-          src={user.avatar || 'https://ac.goit.global/fullstack/react/notehub-default-avatar.jpg'}
-          alt="User Avatar"
-          width={120}
-          height={120}
-          className={css.avatar}
-        />
+        <div className={css.avatarWrapper}>
+          <Image
+            src={user.avatar || "https://ac.goit.global/default-avatar.png"}
+            alt="User Avatar"
+            width={120}
+            height={120}
+            className={css.avatar}
+            priority
+          />
+        </div>
 
         <form className={css.profileInfo} onSubmit={handleSubmit}>
           <div className={css.usernameWrapper}>
@@ -104,28 +61,36 @@ export default function EditProfilePage() {
               id="username"
               type="text"
               className={css.input}
-              value={formData.username}
-              onChange={handleChange}
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
             />
           </div>
 
-          <p>Email: {user.email}</p>
+          <p className={css.emailText}>Email: {user.email}</p>
 
           <div className={css.actions}>
-            <button type="submit" className={css.saveButton} disabled={isSaving}>
-              {isSaving ? 'Saving...' : 'Save'}
+            <button
+              type="submit"
+              className={css.saveButton}
+              disabled={mutation.isPending}
+            >
+              {mutation.isPending ? "Saving..." : "Save"}
             </button>
             <button
               type="button"
               className={css.cancelButton}
               onClick={handleCancel}
-              disabled={isSaving}
             >
               Cancel
             </button>
           </div>
 
-          {error && <p style={{ color: 'red', marginTop: '1rem' }}>{error}</p>}
+          {mutation.isError && (
+            <p className={css.error}>
+              Failed to update profile. Please try again.
+            </p>
+          )}
         </form>
       </div>
     </main>
