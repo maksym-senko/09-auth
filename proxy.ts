@@ -1,34 +1,20 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { parseSetCookie } from 'cookie';
 import { checkSession } from '@/lib/api/serverApi';
 
 const PRIVATE_ROUTES = ['/notes', '/profile'];
 const AUTH_ROUTES = ['/sign-in', '/sign-up'];
 
-function parseSetCookie(cookieStr: string) {
-  const parts = cookieStr.split(';').map(p => p.trim());
-  const [nameValue] = parts;
-  const [name, value] = nameValue.split('=');
-  const options: Record<string, string | boolean> = {};
-  for (let i = 1; i < parts.length; i++) {
-    const part = parts[i];
-    if (part.includes('=')) {
-      const [key, val] = part.split('=');
-      options[key.toLowerCase()] = val;
-    } else {
-      options[part.toLowerCase()] = true;
-    }
-  }
-  return { name, value, options };
-}
-
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  
+
   const accessToken = request.cookies.get('accessToken')?.value;
   const refreshToken = request.cookies.get('refreshToken')?.value;
 
-  const isPrivateRoute = PRIVATE_ROUTES.some((route) => pathname.startsWith(route));
+  const isPrivateRoute = PRIVATE_ROUTES.some((route) =>
+    pathname.startsWith(route)
+  );
   const isAuthRoute = AUTH_ROUTES.some((route) => pathname.startsWith(route));
 
   const response = NextResponse.next();
@@ -36,18 +22,32 @@ export async function proxy(request: NextRequest) {
 
   if (!accessToken && refreshToken) {
     try {
-      const sessionResponse = await checkSession(); 
-      
+      const sessionResponse = await checkSession();
+
       if (sessionResponse) {
         isValidSession = true;
-        
+
         const setCookie = sessionResponse.headers['set-cookie'];
-        
+
         if (setCookie) {
-          const cookiesArray = Array.isArray(setCookie) ? setCookie : [setCookie];
+          const cookiesArray = Array.isArray(setCookie)
+            ? setCookie
+            : [setCookie];
+
           for (const cookieStr of cookiesArray) {
-            const { name, value, options } = parseSetCookie(cookieStr);
-            response.cookies.set(name, value, options);
+            const parsed = parseSetCookie(cookieStr);
+
+            if (parsed && parsed.name && parsed.value) {
+              response.cookies.set(parsed.name, parsed.value, {
+                path: parsed.path,
+                expires: parsed.expires,
+                maxAge: parsed.maxAge,
+                domain: parsed.domain,
+                secure: parsed.secure,
+                httpOnly: parsed.httpOnly,
+                sameSite: parsed.sameSite as 'strict' | 'lax' | 'none' | undefined,
+              });
+            }
           }
         }
       }
@@ -71,10 +71,5 @@ export async function proxy(request: NextRequest) {
 export default proxy;
 
 export const config = {
-  matcher: [
-    '/notes/:path*', 
-    '/profile/:path*', 
-    '/sign-in', 
-    '/sign-up'
-  ],
+  matcher: ['/notes/:path*', '/profile/:path*', '/sign-in', '/sign-up'],
 };

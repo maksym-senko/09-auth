@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { api } from '@/lib/api/api';
-import { AxiosError } from 'axios';
+import { isAxiosError } from 'axios';
+import { api } from '../../api';
+import { logErrorResponse } from '../../_utils/utils';
 
 export async function GET() {
   try {
@@ -11,24 +12,26 @@ export async function GET() {
       .map((c) => `${c.name}=${c.value}`)
       .join('; ');
 
-    const response = await api.get('/users/me', {
+    const apiRes = await api.get('users/me', {
       headers: {
         Cookie: cookieString,
       },
     });
 
-    return NextResponse.json(response.data, { status: response.status });
-  } catch (error: unknown) {
-    if (error instanceof AxiosError) {
+    return NextResponse.json(apiRes.data, { status: apiRes.status });
+  } catch (error) {
+    if (isAxiosError(error)) {
+      logErrorResponse(error.response?.data);
       const status = error.status || error.response?.status || 500;
       const message =
         status === 500
           ? 'Internal Server Error'
-          : (error.response?.data as { message?: string })?.message || 'Internal Server Error';
+          : error.response?.data?.message || 'Internal Server Error';
 
       return NextResponse.json({ message }, { status });
     }
 
+    logErrorResponse({ message: (error as Error).message });
     return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
   }
 }
@@ -42,24 +45,26 @@ export async function PATCH(req: NextRequest) {
       .map((c) => `${c.name}=${c.value}`)
       .join('; ');
 
-    const response = await api.patch('/users/me', body, {
+    const apiRes = await api.patch('users/me', body, {
       headers: {
         Cookie: cookieString,
       },
     });
 
-    return NextResponse.json(response.data, { status: response.status });
-  } catch (error: unknown) {
-    if (error instanceof AxiosError) {
+    return NextResponse.json(apiRes.data, { status: apiRes.status });
+  } catch (error) {
+    if (isAxiosError(error)) {
+      logErrorResponse(error.response?.data);
       const status = error.status || error.response?.status || 500;
       const message =
         status === 500
           ? 'Internal Server Error'
-          : (error.response?.data as { message?: string })?.message || 'Internal Server Error';
+          : error.response?.data?.message || 'Internal Server Error';
 
       return NextResponse.json({ message }, { status });
     }
 
+    logErrorResponse({ message: (error as Error).message });
     return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
   }
 }

@@ -1,6 +1,8 @@
 import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query';
-import { fetchNotes } from '@/lib/api/api';
+import { fetchNotes } from '@/lib/api/serverApi';
 import NotesClient from "./Notes.client";
+
+type NoteTag = "Todo" | "Work" | "Personal" | "Meeting" | "Shopping" | "Health" | "Education" | "Ideas";
 
 interface PageProps {
   params: Promise<{ slug: string[] }>;
@@ -11,7 +13,9 @@ export default async function FilteredNotesPage({ params, searchParams }: PagePr
   const { slug } = await params;
   const { page, search } = await searchParams;
 
-  const currentTag = slug[0] === 'all' ? undefined : slug[0];
+  const rawTag = slug[0] === 'all' ? undefined : slug[0];
+  const currentTag = rawTag as NoteTag | undefined;
+
   const currentPage = Number(page) || 1;
   const currentSearch = search || "";
 

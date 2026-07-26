@@ -1,31 +1,31 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { useDebounce } from 'use-debounce'; 
-import { fetchNotes, NotesResponse } from '@/lib/api/api';
-import  NoteList  from '@/components/NoteList/NoteList';
+import { fetchNotes } from '@/lib/api/clientApi';
+import NoteList from '@/components/NoteList/NoteList';
 import { Pagination } from '@/components/Pagination/Pagination';
 import { SearchBox } from '@/components/SearchBox/SearchBox'; 
-import { Modal } from '@/components/Modal/Modal';
-import  NoteForm  from '@/components/NoteForm/NoteForm';
 
+type FetchNotesArgs = Parameters<typeof fetchNotes>[0];
+type NoteTag = FetchNotesArgs['tag'];
 
-export default function NotesClient({ tag }: { tag?: string }) {
+export default function NotesClient({ tag }: { tag?: NoteTag | string }) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const { replace } = useRouter();
 
   const [searchValue, setSearchValue] = useState(searchParams.get('search') || '');
   const [debouncedSearch] = useDebounce(searchValue, 500);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const currentPage = Number(searchParams.get('page')) || 1;
 
-  const { data, isLoading, isError } = useQuery<NotesResponse>({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ['notes', tag, currentPage, debouncedSearch],
-    queryFn: () => fetchNotes({ tag, page: currentPage, search: debouncedSearch }),
+    queryFn: () => fetchNotes({ tag: tag as NoteTag, page: currentPage, search: debouncedSearch }),
   });
 
   useEffect(() => {
@@ -42,6 +42,15 @@ export default function NotesClient({ tag }: { tag?: string }) {
     replace(`${pathname}?${params.toString()}`);
   };
 
+  // Безпечне отримання сторінок без використання 'any'
+  const responseData = data as Record<string, unknown> | undefined;
+  const totalPagesCount = Number(
+    responseData?.totalPages ?? 
+    responseData?.pageCount ?? 
+    responseData?.total_pages ?? 
+    1
+  );
+
   if (isError) return <div>Error loading data.</div>;
 
   return (
@@ -51,24 +60,18 @@ export default function NotesClient({ tag }: { tag?: string }) {
           value={searchValue} 
           onChange={(e) => setSearchValue(e.target.value)} 
         />
-        <button onClick={() => setIsModalOpen(true)}>Add Note</button>
+        <Link href="/notes/action/create">Add Note</Link>
       </div>
 
       {isLoading ? <div>Loading...</div> : <NoteList notes={data?.notes ?? []} />}
       
-      {data && data.totalPages > 1 && (
+      {data && totalPagesCount > 1 && (
         <Pagination 
-          pageCount={data.totalPages} 
+          pageCount={totalPagesCount} 
           onPageChange={handlePageChange}
           forcePage={currentPage - 1} 
         />
       )}
-
-{isModalOpen && (
-  <Modal onClose={() => setIsModalOpen(false)}>
-    <NoteForm />
-  </Modal>
-)}
     </div>
   );
 }
