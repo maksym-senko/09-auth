@@ -1,82 +1,56 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Note } from '@/types/note';
-import { deleteNote } from '@/lib/api/clientApi';
-import styles from './NoteList.module.css';
+import Link from "next/link";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { deleteNote } from "@/lib/api/clientApi";
+import type { Note } from "../../types/note";
+import css from "./NoteList.module.css";
 
-interface NotesListProps {
+interface NoteListProps {
   notes: Note[];
 }
 
-export default function NotesList({ notes }: NotesListProps) {
+export default function NoteList({ notes }: NoteListProps) {
   const queryClient = useQueryClient();
 
-  const { mutate: handleDelete } = useMutation({
+  const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteNote(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notes'] });
+      queryClient.invalidateQueries({ queryKey: ["notes"] });
     },
-    onError: (error) => {
-      console.error('Помилка при видаленні:', error);
-      alert('Не вдалося видалити нотатку');
-    }
   });
 
-  const getTagColor = (tag: string) => {
-    const tagColors: Record<string, string> = {
-      Todo: styles.tagTodo,
-      Work: styles.tagWork,
-      Personal: styles.tagPersonal,
-      Meeting: styles.tagMeeting,
-      Shopping: styles.tagShopping,
-      Health: styles.tagHealth,
-      Education: styles.tagEducation,
-      Ideas: styles.tagIdeas,
-    };
-    return tagColors[tag] || styles.tagDefault;
+  const handleDelete = (id: string) => {
+    if (window.confirm("Are you sure you want to delete this note?")) {
+      deleteMutation.mutate(id);
+    }
   };
 
   return (
-    <div className={styles.grid}>
-      {notes.map((note) => (
-        <div key={note.id} className={styles.cardWrapper}>
-          <Link href={`/notes/${note.id}`} className={styles.card}>
-            <div className={styles.cardContent}>
-              <div className={styles.cardHeader}>
-                <h3 className={styles.cardTitle}>{note.title}</h3>
-                <span className={`${styles.tag} ${getTagColor(note.tag)}`}>
-                  {note.tag}
-                </span>
-              </div>
-              <p className={styles.cardPreview}>
-                {note.content.substring(0, 100)}
-                {note.content.length > 100 ? '...' : ''}
-              </p>
-              <div className={styles.cardFooter}>
-                <span className={styles.date}>
-                  {new Date(note.createdAt).toLocaleDateString()}
-                </span>
-              </div>
+    <ul className={css.list}>
+      {notes.map(({ id, title, content, tag }) => (
+        <li key={id} className={css.listItem}>
+          <h2 className={css.title}>{title}</h2>
+          <p className={css.content}>{content}</p>
+          <div className={css.footer}>
+            <span className={css.tag}>{tag}</span>
+            <div className={css.actions}>
+              <Link href={`/notes/${id}`} className={css.detailsLink}>
+                View details
+              </Link>
+
+              <button
+                className={css.button}
+                type="button"
+                onClick={() => handleDelete(id)}
+                disabled={deleteMutation.isPending}
+              >
+                {deleteMutation.isPending ? "..." : "Delete"}
+              </button>
             </div>
-          </Link>
-          
-          <button
-            className={styles.deleteButton}
-            onClick={(e) => {
-              e.preventDefault(); 
-              e.stopPropagation(); 
-              if (confirm('Ви впевнені, що хочете видалити цю нотатку?')) {
-                handleDelete(note.id);
-              }
-            }}
-            aria-label="Delete note"
-          >
-            🗑️
-          </button>
-        </div>
+          </div>
+        </li>
       ))}
-    </div>
+    </ul>
   );
 }

@@ -1,64 +1,57 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
-import { useAuthStore } from '@/lib/store/authStore';
-import { checkSession, getMe } from '@/lib/api/clientApi';
+import { useEffect, useState, ReactNode } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useAuthStore } from "@/lib/store/authStore";
+import { checkSession, logout } from "@/lib/api/clientApi";
 
-const PRIVATE_ROUTES = ['/profile', '/notes'];
-const PUBLIC_AUTH_ROUTES = ['/sign-in', '/sign-up'];
-
-interface AuthProviderProps {
-  children: React.ReactNode;
-}
-
-export default function AuthProvider({ children }: AuthProviderProps) {
+export default function AuthProvider({ children }: { children: ReactNode }) {
+  const { setUser, clearIsAuthenticated } = useAuthStore();
   const [isLoading, setIsLoading] = useState(true);
   const pathname = usePathname();
   const router = useRouter();
-  const { setUser, isAuthenticated, clearAuth } = useAuthStore();
 
   useEffect(() => {
-    const verifySession = async () => {
+    const verifyAuth = async () => {
+      const isPrivateRoute =
+        pathname.startsWith("/profile") || pathname.startsWith("/notes");
+
       try {
-        const session = await checkSession();
-        
-        if (session) {
-          const userData = await getMe();
-          setUser(userData);
+        const user = await checkSession();
+
+        if (user) {
+          setUser(user);
         } else {
-          clearAuth();
+          clearIsAuthenticated();
+          if (isPrivateRoute) {
+            await logout();
+            router.push("/sign-in");
+          }
         }
-      } catch (error) {
-        console.error('Session verification failed:', error);
-        clearAuth();
+      } catch {
+        clearIsAuthenticated();
+        if (isPrivateRoute) {
+          router.push("/sign-in");
+        }
       } finally {
         setIsLoading(false);
       }
     };
 
-    verifySession();
-  }, [setUser, clearAuth]);
-
-  useEffect(() => {
-    if (isLoading) return;
-
-    const isPrivateRoute = PRIVATE_ROUTES.some(route => pathname.startsWith(route));
-    const isAuthRoute = PUBLIC_AUTH_ROUTES.some(route => pathname.startsWith(route));
-
-    if (isPrivateRoute && !isAuthenticated) {
-      router.push('/sign-in');
-    }
-
-    if (isAuthRoute && isAuthenticated) {
-      router.push('/profile');
-    }
-  }, [isLoading, isAuthenticated, pathname, router]);
+    verifyAuth();
+  }, [pathname, setUser, clearIsAuthenticated, router]);
 
   if (isLoading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-        <p>Loading...</p>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+        }}
+      >
+        <p>Loading session...</p>
       </div>
     );
   }
