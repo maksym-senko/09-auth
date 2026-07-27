@@ -6,7 +6,7 @@ import { AxiosError } from "axios";
 import { login, LoginData } from "@/lib/api/clientApi";
 import { useAuthStore } from "@/lib/store/authStore";
 import { User } from "@/types/user";
-import css from "./SignInPage.module.css";
+import css from "./page.module.css";
 
 export default function SignInPage() {
   const router = useRouter();

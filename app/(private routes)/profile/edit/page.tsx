@@ -6,7 +6,7 @@ import Image from "next/image";
 import { useMutation } from "@tanstack/react-query";
 import { useAuthStore } from "@/lib/store/authStore";
 import { updateMe } from "@/lib/api/clientApi";
-import css from "./EditProfilePage.module.css";
+import css from "./page.module.css";
 
 export default function ProfileEditPage() {
   const router = useRouter();
