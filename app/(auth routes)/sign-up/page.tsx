@@ -4,9 +4,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { register } from "@/lib/api/clientApi";
+import { useAuthStore } from "@/lib/store/authStore";
 
 export default function SignUpPage() {
   const router = useRouter();
+  const setUser = useAuthStore((state) => state.setUser);
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -27,9 +30,11 @@ export default function SignUpPage() {
     setIsLoading(true);
 
     try {
-      const res = await register(formData);
-      if (res) {
-        // Успішна реєстрація — перенаправляємо на профіль
+      const user = await register(formData);
+      
+      if (user) {
+        setUser(user);
+        
         router.push("/profile");
       }
     } catch (err: unknown) {

@@ -31,15 +31,7 @@ export async function GET() {
           const parsed = parseSetCookie(cookieStr);
 
           if (parsed && parsed.name && parsed.value) {
-            cookieStore.set(parsed.name, parsed.value, {
-              path: parsed.path,
-              expires: parsed.expires,
-              maxAge: parsed.maxAge,
-              domain: parsed.domain,
-              secure: parsed.secure,
-              httpOnly: parsed.httpOnly,
-              sameSite: parsed.sameSite as "strict" | "lax" | "none" | undefined,
-            });
+            cookieStore.set(parsed.name, parsed.value, parsed);
           }
         }
         return NextResponse.json({ success: true }, { status: 200 });

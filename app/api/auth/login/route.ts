@@ -21,15 +21,7 @@ export async function POST(req: NextRequest) {
         const parsed = parseSetCookie(cookieStr);
 
         if (parsed && parsed.name && parsed.value) {
-          cookieStore.set(parsed.name, parsed.value, {
-            path: parsed.path,
-            expires: parsed.expires,
-            maxAge: parsed.maxAge,
-            domain: parsed.domain,
-            secure: parsed.secure,
-            httpOnly: parsed.httpOnly,
-            sameSite: parsed.sameSite as 'strict' | 'lax' | 'none' | undefined,
-          });
+          cookieStore.set(parsed.name, parsed.value, parsed);
         }
       }
     }
@@ -38,16 +30,16 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     if (isAxiosError(error)) {
       logErrorResponse(error.response?.data);
-      const status = error.status || error.response?.status || 500;
-      const message =
-        status === 500
-          ? 'Internal Server Error'
-          : error.response?.data?.message || 'Internal Server Error';
-
-      return NextResponse.json({ message }, { status });
+      return NextResponse.json(
+        { message: error.response?.data?.message || 'Internal Server Error' },
+        { status: error.response?.status || 500 }
+      );
     }
 
     logErrorResponse({ message: (error as Error).message });
-    return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json(
+      { message: 'Internal Server Error' },
+      { status: 500 }
+    );
   }
 }
