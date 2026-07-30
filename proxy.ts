@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { parseSetCookie } from "cookie";
 import { getSession } from "./lib/api/serverApi";
 
 export async function proxy(request: NextRequest) {
-  const accessToken = request.cookies.get("accessToken")?.value;
-  const refreshToken = request.cookies.get("refreshToken")?.value;
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get("accessToken")?.value;
+  const refreshToken = cookieStore.get("refreshToken")?.value;
   const { pathname } = request.nextUrl;
 
   const isPublicRoute = pathname === "/sign-in" || pathname === "/sign-up";
@@ -19,7 +22,12 @@ export async function proxy(request: NextRequest) {
       if (apiRes && apiRes.data) {
         isAuthorized = true;
 
-        apiCookies = apiRes.headers["set-cookie"];
+        const setCookieHeader = apiRes.headers["set-cookie"];
+        if (setCookieHeader) {
+          apiCookies = Array.isArray(setCookieHeader)
+            ? setCookieHeader
+            : [setCookieHeader];
+        }
       }
     } catch {
       isAuthorized = false;
@@ -37,9 +45,21 @@ export async function proxy(request: NextRequest) {
   }
 
   if (apiCookies) {
-    apiCookies.forEach((cookie) => {
-      response.headers.append("set-cookie", cookie);
-    });
+    for (const cookieStr of apiCookies) {
+      const parsed = parseSetCookie(cookieStr);
+
+      if (parsed && parsed.name && parsed.value) {
+        response.cookies.set(parsed.name, parsed.value, {
+          path: parsed.path,
+          expires: parsed.expires,
+          maxAge: parsed.maxAge,
+          domain: parsed.domain,
+          secure: parsed.secure,
+          httpOnly: parsed.httpOnly,
+          sameSite: parsed.sameSite as "strict" | "lax" | "none" | undefined,
+        });
+      }
+    }
   }
 
   return response;
